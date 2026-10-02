@@ -1,0 +1,33 @@
+PASTA DE IDENTIDADE VISUAL - XAROPARIA ETIQUETAS
+=================================================
+
+Coloque aqui os arquivos da logo e do ícone da aplicação.
+
+1) LOGO (exibida no canto superior esquerdo da tela)
+   - Nome do arquivo: logo.png
+   - Formato: PNG com fundo transparente
+   - Tamanho recomendado: 128 x 128 px (ou maior, proporcional)
+   - Caminho: Assets\logo.png
+
+   Observação: o PictureBox usa SizeMode = Zoom, então a imagem
+   fica proporcional automaticamente. Se o arquivo não existir,
+   um espaço reservado é exibido no lugar.
+
+2) ÍCONE DO APLICATIVO / EXECUTÁVEL / FORMULÁRIO
+   - Nome do arquivo: app.ico
+   - Formato: .ico (contendo 16x16, 32x32, 48x48 e 256x256)
+   - Caminho: Assets\app.ico
+
+   Quando o arquivo app.ico existir, ele é automaticamente:
+   - usado como ícone do formulário principal (em tempo de execução);
+   - compilado como ícone do executável/atalho (via ApplicationIcon no .csproj).
+
+COMO TROCAR O ÍCONE NO FUTURO
+-----------------------------
+Basta substituir o arquivo Assets\app.ico por outro com o mesmo nome
+e recompilar. Para a logo da tela, substitua Assets\logo.png.
+
+DICA PARA GERAR O .ICO
+----------------------
+Use a logo em PNG de alta resolução e converta para .ico com um
+conversor que gere múltiplas resoluções no mesmo arquivo.

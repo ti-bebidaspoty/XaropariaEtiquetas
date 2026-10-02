@@ -1,0 +1,77 @@
+## Visual Studio / .NET
+
+# Pastas de usuário e cache do Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.rsuser
+*.DotSettings.user
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# Artefatos de build
+[Bb]in/
+[Bb]uild/
+[Oo]bj/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+*.pdb
+*.ilk
+*.obj
+*.pch
+*.tmp
+*.tmp_proj
+*.cache
+*.log
+*.binlog
+*.vspscc
+*.vssscc
+
+# Publicação
+publish/
+PublishScripts/
+*.pubxml
+*.pubxml.user
+*.publishproj
+
+# Testes e cobertura
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+[Cc]overage[Rr]eport/
+.coverage/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+project.lock.json
+.nuget/
+*.nuget.props
+*.nuget.targets
+
+# Logs e temporários locais
+[Ll]ogs/
+*.log
+~$*
+*~
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
