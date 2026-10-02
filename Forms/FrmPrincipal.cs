@@ -18,6 +18,11 @@ public partial class FrmPrincipal : Form
     // de lotes por uma seleção transitória (índice 0) durante o preenchimento.
     private bool _preenchendoCombos;
 
+    // Listas originais mantidas em memória; o filtro dos combos acontece sobre elas (sem novas consultas ao SAP).
+    private List<Produto> _todosProdutos = [];
+    private List<Lote> _todosLotes = [];
+    private List<Colaborador> _todosColaboradores = [];
+    private bool _filtrandoCombo;
     public FrmPrincipal(
         SapService sapService,
         BalancaService balancaService,
@@ -40,6 +45,12 @@ public partial class FrmPrincipal : Form
 
         cmbProduto.SelectedIndexChanged += async (_, _) => await CarregarLotesAsync();
 
+        cmbProduto.TextUpdate += (_, _) => FiltrarProdutos(cmbProduto.Text);
+        cmbLote.TextUpdate += (_, _) => FiltrarLotes(cmbLote.Text);
+        cmbColaborador.TextUpdate += (_, _) => FiltrarColaboradores(cmbColaborador.Text);
+        cmbProduto.KeyDown += ConfirmarComEnter;
+        cmbLote.KeyDown += ConfirmarComEnter;
+        cmbColaborador.KeyDown += ConfirmarComEnter;
         rbBalanca.CheckedChanged += (_, _) => AtualizarModoPesagem();
         rbManual.CheckedChanged += (_, _) => AtualizarModoPesagem();
 
@@ -53,6 +64,7 @@ public partial class FrmPrincipal : Form
 
         btnAdicionar.Click += (_, _) => AdicionarItemFila();
         btnLimpar.Click += (_, _) => LimparFila();
+        btnLimparFormulario.Click += (_, _) => LimparFormulario();
         btnRemover.Click += (_, _) => RemoverSelecionado();
         btnImprimir.Click += async (_, _) => await ImprimirFilaAsync();
 
@@ -95,10 +107,12 @@ public partial class FrmPrincipal : Form
         try
         {
             var produtos = await _sapService.BuscarProdutosAsync();
-            PreencherComboProtegido(cmbProduto, produtos);
+            _todosProdutos = produtos.ToList();
+            PreencherComboPesquisavel(cmbProduto, _todosProdutos);
 
             var colaboradores = await _sapService.BuscarColaboradoresAsync();
-            PreencherCombo(cmbColaborador, colaboradores);
+            _todosColaboradores = colaboradores.ToList();
+            PreencherComboPesquisavel(cmbColaborador, _todosColaboradores);
 
             lblStatusSap.Text = "●  SAP  disponível";
             lblStatusSap.ForeColor = Color.FromArgb(0x2E, 0x7D, 0x32);
@@ -109,6 +123,100 @@ public partial class FrmPrincipal : Form
             lblStatusSap.ForeColor = Color.FromArgb(0xC6, 0x28, 0x28);
             MostrarErro("Não foi possível carregar os dados do SAP.", ex);
         }
+    }
+
+    private void PreencherComboPesquisavel<T>(ComboBox combo, List<T> itens) where T : class
+    {
+        _preenchendoCombos = true;
+        try
+        {
+            combo.AutoCompleteMode = AutoCompleteMode.None;
+            combo.AutoCompleteSource = AutoCompleteSource.None;
+            combo.DataSource = null;
+            combo.Items.Clear();
+            combo.Items.AddRange([.. itens]);
+            combo.SelectedIndex = -1;
+        }
+        finally
+        {
+            _preenchendoCombos = false;
+        }
+    }
+
+    private void FiltrarProdutos(string texto) =>
+        FiltrarCombo(cmbProduto, _todosProdutos, texto, p =>
+            p.ProdutoId.Contains(texto, StringComparison.OrdinalIgnoreCase)
+            || p.Descricao.Contains(texto, StringComparison.OrdinalIgnoreCase));
+
+    private void FiltrarLotes(string texto) =>
+        FiltrarCombo(cmbLote, _todosLotes, texto, l =>
+            l.LoteNumero.Contains(texto, StringComparison.OrdinalIgnoreCase)
+            || l.Deposito.Contains(texto, StringComparison.OrdinalIgnoreCase));
+
+    private void FiltrarColaboradores(string texto) =>
+        FiltrarCombo(cmbColaborador, _todosColaboradores, texto, c =>
+            c.Nome.Contains(texto, StringComparison.OrdinalIgnoreCase));
+
+    private void FiltrarCombo<T>(ComboBox combo, List<T> origem, string texto, Func<T, bool> corresponde) where T : class
+    {
+        if (_filtrandoCombo || _preenchendoCombos)
+        {
+            return;
+        }
+
+        // Texto atualizado por seleção na lista: não filtra de novo.
+        if (combo.SelectedItem is not null && combo.SelectedItem.ToString() == texto)
+        {
+            return;
+        }
+
+        var cursor = combo.SelectionStart;
+        _filtrandoCombo = true;
+        try
+        {
+            var filtrados = string.IsNullOrWhiteSpace(texto)
+                ? origem
+                : origem.Where(corresponde).ToList();
+
+            combo.BeginUpdate();
+            combo.Items.Clear();
+            combo.Items.AddRange([.. filtrados]);
+            combo.EndUpdate();
+
+            combo.Text = texto;
+            combo.SelectionStart = Math.Min(cursor, texto.Length);
+            combo.SelectionLength = 0;
+
+            Cursor.Current = Cursors.Default;
+            combo.DroppedDown = filtrados.Count > 0;
+            combo.SelectionStart = Math.Min(cursor, texto.Length);
+            combo.SelectionLength = 0;
+        }
+        finally
+        {
+            _filtrandoCombo = false;
+        }
+    }
+
+    private void ConfirmarComEnter(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyCode != Keys.Enter || sender is not ComboBox combo)
+        {
+            return;
+        }
+
+        if (combo.SelectedIndex < 0 && combo.Items.Count == 1)
+        {
+            combo.SelectedIndex = 0;
+        }
+
+        if (combo.DroppedDown)
+        {
+            combo.DroppedDown = false;
+        }
+
+        e.Handled = true;
+        e.SuppressKeyPress = true;
     }
 
     private static void PreencherCombo(ComboBox combo, System.Collections.IEnumerable itens)
@@ -134,7 +242,7 @@ public partial class FrmPrincipal : Form
 
     private async Task CarregarLotesAsync()
     {
-        if (_preenchendoCombos)
+        if (_preenchendoCombos || _filtrandoCombo)
         {
             return;
         }
@@ -148,7 +256,8 @@ public partial class FrmPrincipal : Form
         try
         {
             var lotes = await _sapService.BuscarLotesAsync(produto.ProdutoId);
-            PreencherCombo(cmbLote, lotes);
+            _todosLotes = lotes.ToList();
+            PreencherComboPesquisavel(cmbLote, _todosLotes);
         }
         catch (Exception ex)
         {
@@ -338,6 +447,31 @@ public partial class FrmPrincipal : Form
         });
     }
 
+    private void LimparFormulario()
+    {
+        // Produto, Lote e Colaborador (restaura as listas completas, sem consultar o SAP)
+        PreencherComboPesquisavel(cmbProduto, _todosProdutos);
+        PreencherComboPesquisavel(cmbColaborador, _todosColaboradores);
+        _todosLotes = [];
+        PreencherComboPesquisavel(cmbLote, _todosLotes);
+        cmbProduto.Text = string.Empty;
+        cmbLote.Text = string.Empty;
+        cmbColaborador.Text = string.Empty;
+
+        numQuantidade.Value = 1;
+        txtTara.Text = DecimalHelper.ParaN3(0);
+
+        if (rbManual.Checked)
+        {
+            txtPesoEmbalagem.Text = DecimalHelper.ParaN3(0);
+            nudQuantidadeEmbalagens.Value = 1;
+        }
+
+        // Modo balança: o peso bruto continua vindo da balança; apenas recalcula o líquido.
+        AtualizarCalculoPeso();
+        cmbProduto.Focus();
+    }
+
     private void RemoverSelecionado()
     {
         if (dgvFila.CurrentRow?.DataBoundItem is ItemEtiqueta item)
@@ -380,9 +514,8 @@ public partial class FrmPrincipal : Form
             var zpl = _etiquetaService.GerarZpl(_fila);
             await _impressoraService.ImprimirAsync(zpl);
 
-            _fila.Clear();
             MessageBox.Show(
-                "Etiquetas enviadas para impressão.",
+                "Etiquetas enviadas para impressão com sucesso.",
                 "Sucesso",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);

@@ -58,6 +58,7 @@ partial class FrmPrincipal
     private Label lblContadorFila;
     private DataGridView dgvFila;
     private Button btnLimpar;
+    private Button btnLimparFormulario;
     private Button btnImprimir;
 
     protected override void Dispose(bool disposing)
@@ -827,6 +828,11 @@ partial class FrmPrincipal
         btnAdicionar.Margin = new Padding(0, 0, 0, 0);
         linha.Controls.Add(btnAdicionar);
 
+        btnLimparFormulario = new Button { Text = "Limpar formulário" };
+        EstilizarBotaoSecundario(btnLimparFormulario);
+        btnLimparFormulario.Margin = new Padding(10, 0, 0, 0);
+        linha.Controls.Add(btnLimparFormulario);
+
         cardImpressao.Controls.Add(linha);
     }
 
@@ -915,7 +921,7 @@ partial class FrmPrincipal
         };
         btnImprimir = new Button { Text = "Imprimir etiquetas" };
         EstilizarBotaoPrincipal(btnImprimir);
-        btnLimpar = new Button { Text = "Limpar" };
+        btnLimpar = new Button { Text = "Limpar fila" };
         EstilizarBotaoSecundario(btnLimpar);
         var btnRemover = new Button { Text = "Remover selecionado", Name = "btnRemover" };
         EstilizarBotaoSecundario(btnRemover);
