@@ -10,12 +10,18 @@ namespace XaropariaEtiquetas.Services;
 /// </summary>
 public sealed class SapService
 {
-    private readonly string _connectionString;
+    private readonly string _sapConnectionString;
+    private readonly string _internosConnectionString;
 
-    public SapService(string connectionString)
+    public SapService(
+        string sapConnectionString,
+        string internosConnectionString)
     {
-        _connectionString = connectionString
-            ?? throw new ArgumentNullException(nameof(connectionString));
+        _sapConnectionString = sapConnectionString
+            ?? throw new ArgumentNullException(nameof(sapConnectionString));
+
+        _internosConnectionString = internosConnectionString
+            ?? throw new ArgumentNullException(nameof(internosConnectionString));
     }
 
     /// <summary>
@@ -47,7 +53,7 @@ public sealed class SapService
 
         var produtos = new List<Produto>();
 
-        await using var conexao = new SqlConnection(_connectionString);
+        await using var conexao = new SqlConnection(_sapConnectionString);
         await conexao.OpenAsync(cancellationToken);
 
         await using var comando = new SqlCommand(sql, conexao);
@@ -122,7 +128,7 @@ public sealed class SapService
 
         var lotes = new List<Lote>();
 
-        await using var conexao = new SqlConnection(_connectionString);
+        await using var conexao = new SqlConnection(_sapConnectionString);
         await conexao.OpenAsync(cancellationToken);
 
         await using var comando = new SqlCommand(sql, conexao);
@@ -143,56 +149,47 @@ public sealed class SapService
     }
 
     /// <summary>
-    /// Lista os colaboradores da Xaroparia (departamento 16 ativos) somados aos
-    /// colaboradores específicos definidos pela regra do sistema antigo.
+    /// Lista os colaboradores da Linha E1 cadastrados no sistema interno.
     /// </summary>
     public async Task<IReadOnlyList<Colaborador>> BuscarColaboradoresAsync(
         CancellationToken cancellationToken = default)
     {
         const string sql = """
-            SELECT CONCAT(A.firstName, ' ', A.lastName) AS Nome
-            FROM OHEM A
-            WHERE
-                (
-                    A.dept = 16
-                    AND A.Active = 'Y'
-                    AND A.status = 1
-                )
-                OR
-                (
-                    (A.firstName LIKE 'Mailson%' AND A.lastName LIKE 'Da Silva Rocha%')
-                    OR (A.firstName LIKE 'Marcelo%' AND A.lastName LIKE 'Balsarini Dalecio%')
-                    OR (A.firstName LIKE 'Charliston%' AND A.lastName LIKE 'Nunes Da Silva Oscar%')
-                    OR (A.firstName LIKE 'Ryan%' AND A.lastName LIKE 'Santos Da Silva%')
-                    OR (A.firstName LIKE 'Edmar%' AND A.lastName LIKE 'Da Silva Oscar%')
-                    OR (A.firstName LIKE 'Clebyson%' AND A.lastName LIKE 'Carlos Amancio Pinto%')
-                    OR (A.firstName LIKE 'Rauan%' AND A.lastName LIKE 'Gomes Passos%')
-                    OR (A.firstName LIKE 'Lucas%' AND A.lastName LIKE 'Mendonça%')
-                    OR (A.firstName LIKE 'Alex%' AND A.lastName LIKE 'Nunes Da Silva%')
-                    OR (A.firstName LIKE 'Maicon%' AND A.lastName LIKE 'Michachi%')
-                    OR (A.firstName LIKE 'Kayky%' AND A.lastName LIKE 'Mathias De Araujo%')
-                    OR (A.firstName LIKE 'Luciano%' AND A.lastName LIKE '%Antonio%Silva%')
-                    OR (A.firstName LIKE 'Mateus%' AND A.lastName LIKE '%Vinicius%Silva%')
-                    OR (A.firstName LIKE 'Nevio%' AND A.lastName LIKE '%Antunes%Silva%')
-                )
-            ORDER BY Nome
-            """;
+        SELECT U.Nome
+        FROM Global.Usuarios U
+        INNER JOIN Global.Departamentos D
+            ON U.DepartamentoID = D.DepartamentoID
+        WHERE D.Departamento LIKE 'XAROPARIA%'
+        ORDER BY U.Nome
+        """;
+
+        //LIKE = 'XAROPARIA%' para pegar todos os colaboradores dO Bloco C
+        //LIKE = 'Linha E1%' para pegar todos os colaboradores dO Bloco E
 
         var colaboradores = new List<Colaborador>();
 
-        await using var conexao = new SqlConnection(_connectionString);
+        await using var conexao =
+            new SqlConnection(_internosConnectionString);
+
         await conexao.OpenAsync(cancellationToken);
 
-        await using var comando = new SqlCommand(sql, conexao);
-        await using var leitor = await comando.ExecuteReaderAsync(cancellationToken);
+        await using var comando =
+            new SqlCommand(sql, conexao);
+
+        await using var leitor =
+            await comando.ExecuteReaderAsync(cancellationToken);
 
         while (await leitor.ReadAsync(cancellationToken))
         {
+            if (leitor.IsDBNull(0))
+                continue;
+
             var nome = leitor.GetString(0).Trim();
-            if (!string.IsNullOrWhiteSpace(nome))
-            {
-                colaboradores.Add(new Colaborador(nome));
-            }
+
+            if (string.IsNullOrWhiteSpace(nome))
+                continue;
+
+            colaboradores.Add(new Colaborador(nome));
         }
 
         return colaboradores;

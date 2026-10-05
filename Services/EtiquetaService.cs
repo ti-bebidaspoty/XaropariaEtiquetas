@@ -102,7 +102,7 @@ public sealed class EtiquetaService
               $"^FT104,172 ^A0N,20,20 ^FH^CI28^FD{validade}^FS^CI27" +
               "^FT54,195 ^A0N,20,20 ^FH^CI28^FDLote:^FS^CI27" +
               $"^FT104,195 ^A0N,20,20 ^FH^CI28^FD{lote} ^FS^CI27" +
-              $"^FT25,238^A0N,20,20^FD{colaborador}^FS^CI27" +
+              $"^FT25,233^A0N,20,20^FD{colaborador}^FS^CI27" +
               "^FO250,55" +
               "^BQN,2,3" +
               $"^FDLA,{jsonQr}^FS"
@@ -119,7 +119,7 @@ public sealed class EtiquetaService
               $"^FT536,172 ^A0N,20,20 ^FH^CI28^FD{validade}^FS^CI27" +
               "^FT486,195 ^A0N,20,20 ^FH^CI28^FDLote:^FS^CI27" +
               $"^FT536,195 ^A0N,20,20 ^FH^CI28^FD{lote} ^FS^CI27" +
-              $"^FT457,238^A0N,20,20^FD{colaborador}^FS^CI27" +
+              $"^FT457,233^A0N,20,20^FD{colaborador}^FS^CI27" +
               "^FO650,55" +
               "^BQN,2,3" +
               $"^FDLA,{jsonQr}^FS";

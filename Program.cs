@@ -37,10 +37,19 @@ namespace XaropariaEtiquetas
 
             services.AddSingleton(_ =>
             {
-                var connectionString = builder.Configuration.GetConnectionString("Sap")
+                var sapConnectionString =
+                    builder.Configuration.GetConnectionString("Sap")
                     ?? throw new InvalidOperationException(
                         "ConnectionStrings:Sap não configurada.");
-                return new SapService(connectionString);
+
+                var internosConnectionString =
+                    builder.Configuration.GetConnectionString("Internos")
+                    ?? throw new InvalidOperationException(
+                        "ConnectionStrings:Internos não configurada.");
+
+                return new SapService(
+                    sapConnectionString,
+                    internosConnectionString);
             });
 
             services.AddSingleton<BalancaService>();
